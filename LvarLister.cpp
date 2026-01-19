@@ -54,7 +54,8 @@ BOOL cameraState = FALSE;
 std::string logFileName = "\\work\\LvarLister.log";
 std::ofstream logFile;
 
-char szLogBuffer[512];
+#define LogBufferSize 512
+char szLogBuffer[LogBufferSize];
 
 std::string getCurrentTime()
 {
@@ -84,7 +85,7 @@ void LOG(const char* data)
 void CALLBACK MyDispatchProc(SIMCONNECT_RECV* pData, DWORD cbData, void* pContext)
 {
 	static BOOL dataRequested = FALSE;
-	static int count = 0;
+	static int count = 0, noScans = 0;
 	HRESULT hr;
 	switch (pData->dwID)
 	{
@@ -98,32 +99,37 @@ void CALLBACK MyDispatchProc(SIMCONNECT_RECV* pData, DWORD cbData, void* pContex
 				{
 					if (cameraState && count++ % lvarScanPeriod == 0)
 					{
+						noScans++;
 						LOG("Scanning for Lvars....");
 						PCSTRINGZ lvarname;
-						std::vector<PCSTRINGZ> lvarList; 
+//						std::vector<PCSTRINGZ> lvarList; 
 						bool isValidLVAR = true;
 						int noLvars = 0;
 						do {
 							lvarname = get_name_of_named_variable(noLvars);
 							if (lvarname)
 							{
-								lvarList.push_back(lvarname);
-								sprintf(szLogBuffer, "    ID %d=%s", noLvars, lvarname);
-								LOG(szLogBuffer);
+//								lvarList.push_back(lvarname);
+//								snprintf(szLogBuffer, LogBufferSize-1, "    ID %d='%s'", noLvars, lvarname);
+//								szLogBuffer[LogBufferSize - 1] = 0;
+//								LOG(szLogBuffer);
 								noLvars++;
 							}
 							else
 								isValidLVAR = false;
 						} while (isValidLVAR);
 
-						sprintf(szLogBuffer, "%d lvars found: ", lvarList.size());
+						sprintf(szLogBuffer, "Scan %d found %d lvars: ", noScans, noLvars);
 						LOG(szLogBuffer);
+/****
 						for (int i=0; i< (int)lvarList.size(); i++)
 						{
-							sprintf(szLogBuffer, "    ID %d=%s", i, lvarList[i]);
+							snprintf(szLogBuffer, LogBufferSize-1, "    ID %d='%s'", i, lvarList[i]);
+							szLogBuffer[LogBufferSize-1] = 0;
 							LOG(szLogBuffer);
 						}
 						lvarList.clear();
+****/
 						count = 1;
 					}
 					break;
